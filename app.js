@@ -30,7 +30,8 @@ function initScene() {
     scene.background = new THREE.Color(0x111122);
 
     camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
-    camera.position.set(0, 400, 2500);
+    // Position camera to look at the table from the front
+    camera.position.set(0, 0, 2500);
     camera.lookAt(0, 0, 0);
 
     renderer = new CSS3DRenderer();
@@ -67,14 +68,16 @@ function animate() {
 // 5. CREATE A TILE
 // ============================================================
 function createTile(person) {
-    let bgColor = '#dc3545'; // red: < 100k
-    if (person.netWorth > 200000) bgColor = '#28a745'; // green: > 200k
-    else if (person.netWorth >= 100000) bgColor = '#fd7e14'; // orange: 100k–200k
+    // Color coding based on Net Worth
+    let bgColor = '#dc3545'; // Red: < $100K
+    if (person.netWorth > 200000) bgColor = '#28a745'; // Green: > $200K
+    else if (person.netWorth >= 100000) bgColor = '#fd7e14'; // Orange: $100K–$200K
 
     const el = document.createElement('div');
     el.className = 'element';
     el.style.backgroundColor = bgColor;
 
+    // Photo
     const photoHTML = person.photo && person.photo.startsWith('http')
         ? `<img src="${person.photo}" alt="${person.name}" loading="lazy" />`
         : `<div style="width:50px;height:50px;border-radius:50%;background:#555;display:flex;align-items:center;justify-content:center;font-size:20px;">?</div>`;
@@ -91,28 +94,28 @@ function createTile(person) {
 }
 
 // ============================================================
-// 6. BUILD LAYOUT TARGETS (FIXED TABLE)
+// 6. BUILD LAYOUT TARGETS (TABLE IS NOW FLAT 2D)
 // ============================================================
 function buildTargets() {
     const total = peopleData.length;
     if (total === 0) return;
 
-    // --- TABLE: 20 columns × 10 rows (FLAT 2D) ---
+    // --- TABLE: 20 columns × 10 rows (FLAT 2D - all at Z=0) ---
     targets.table = [];
     const cols = 20;
     const rows = 10;
     const spacingX = 150;
-    const spacingZ = 150;
+    const spacingY = 150;
     const offsetX = (cols - 1) * spacingX / 2;
-    const offsetZ = (rows - 1) * spacingZ / 2;
+    const offsetY = (rows - 1) * spacingY / 2;
 
     for (let i = 0; i < total && i < cols * rows; i++) {
         const col = i % cols;
         const row = Math.floor(i / cols);
         const obj = new THREE.Object3D();
         obj.position.x = col * spacingX - offsetX;
-        obj.position.z = row * spacingZ - offsetZ;
-        obj.position.y = 0;
+        obj.position.y = -(row * spacingY - offsetY); // Rows go top to bottom
+        obj.position.z = 0; // CRITICAL: ALL TILES AT Z=0 (FLAT!)
         targets.table.push(obj);
     }
 
@@ -182,6 +185,7 @@ function transform(targetArray, duration = 1500) {
     function step(time) {
         const elapsed = time - startTime;
         let progress = Math.min(elapsed / duration, 1);
+        // Ease in-out cubic
         const ease = progress < 0.5 ?
             4 * progress * progress * progress :
             1 - Math.pow(-2 * progress + 2, 3) / 2;
@@ -211,9 +215,11 @@ function transform(targetArray, duration = 1500) {
 // 8. CREATE ALL TILES
 // ============================================================
 function createTiles() {
+    // Remove old objects
     objects.forEach(o => scene.remove(o));
     objects.length = 0;
 
+    // Create new tiles with random starting positions
     for (const person of peopleData) {
         const tile = createTile(person);
         tile.position.set(
@@ -226,8 +232,11 @@ function createTiles() {
     }
 
     buildTargets();
+
+    // Show the menu
     document.getElementById('menu').style.display = 'flex';
 
+    // Animate to table layout
     setTimeout(() => {
         transform(targets.table, 1800);
         setActiveButton('table');
@@ -270,7 +279,7 @@ function fetchSheetData(accessToken) {
             gapi.client.setToken({ access_token: accessToken });
             return gapi.client.sheets.spreadsheets.values.get({
                 spreadsheetId: SPREADSHEET_ID,
-                range: 'Data Template!A2:F',
+                range: 'Data Template!A2:F', // Make sure this matches your sheet tab name
             });
         })
         .then((res) => {
@@ -290,6 +299,7 @@ function fetchSheetData(accessToken) {
                 netWorth: parseFloat(row[5] ? row[5].replace(/[$,]/g, '') : 0),
             }));
 
+            // Hide login, show viewer
             document.getElementById('login-container').style.display = 'none';
             initScene();
             createTiles();
