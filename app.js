@@ -20,7 +20,6 @@ let peopleData = [];
 let scene, camera, renderer, controls;
 const objects = [];
 const targets = { table: [], sphere: [], helix: [], grid: [] };
-let currentLayout = 'table';
 let isAnimating = false;
 
 // ============================================================
@@ -31,7 +30,8 @@ function initScene() {
     scene.background = new THREE.Color(0x111122);
 
     camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
-    camera.position.set(0, 200, 2500);
+    camera.position.set(0, 400, 2500);
+    camera.lookAt(0, 0, 0);
 
     renderer = new CSS3DRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -48,7 +48,6 @@ function initScene() {
     controls.target.set(0, 0, 0);
 
     window.addEventListener('resize', onWindowResize);
-
     animate();
 }
 
@@ -68,7 +67,6 @@ function animate() {
 // 5. CREATE A TILE
 // ============================================================
 function createTile(person) {
-    // Pick color based on net worth
     let bgColor = '#dc3545'; // red: < 100k
     if (person.netWorth > 200000) bgColor = '#28a745'; // green: > 200k
     else if (person.netWorth >= 100000) bgColor = '#fd7e14'; // orange: 100k–200k
@@ -77,7 +75,6 @@ function createTile(person) {
     el.className = 'element';
     el.style.backgroundColor = bgColor;
 
-    // Photo
     const photoHTML = person.photo && person.photo.startsWith('http')
         ? `<img src="${person.photo}" alt="${person.name}" loading="lazy" />`
         : `<div style="width:50px;height:50px;border-radius:50%;background:#555;display:flex;align-items:center;justify-content:center;font-size:20px;">?</div>`;
@@ -94,23 +91,28 @@ function createTile(person) {
 }
 
 // ============================================================
-// 6. BUILD LAYOUT TARGETS
+// 6. BUILD LAYOUT TARGETS (FIXED TABLE)
 // ============================================================
 function buildTargets() {
     const total = peopleData.length;
     if (total === 0) return;
 
-    // --- TABLE: 20 columns × 10 rows ---
+    // --- TABLE: 20 columns × 10 rows (FLAT 2D) ---
     targets.table = [];
-    const cols = 20,
-        rows = 10;
-    const spacingX = 150,
-        spacingZ = 150;
-    for (let i = 0; i < total; i++) {
-        const c = i % cols;
-        const r = Math.floor(i / cols);
+    const cols = 20;
+    const rows = 10;
+    const spacingX = 150;
+    const spacingZ = 150;
+    const offsetX = (cols - 1) * spacingX / 2;
+    const offsetZ = (rows - 1) * spacingZ / 2;
+
+    for (let i = 0; i < total && i < cols * rows; i++) {
+        const col = i % cols;
+        const row = Math.floor(i / cols);
         const obj = new THREE.Object3D();
-        obj.position.set((c - cols / 2) * spacingX, 0, (r - rows / 2) * spacingZ);
+        obj.position.x = col * spacingX - offsetX;
+        obj.position.z = row * spacingZ - offsetZ;
+        obj.position.y = 0;
         targets.table.push(obj);
     }
 
@@ -129,9 +131,9 @@ function buildTargets() {
 
     // --- DOUBLE HELIX ---
     targets.helix = [];
-    const helixRadius = 700,
-        heightTotal = 900,
-        turns = 4;
+    const helixRadius = 700;
+    const heightTotal = 900;
+    const turns = 4;
     for (let i = 0; i < total; i++) {
         const t = i / total;
         const angle = t * Math.PI * 2 * turns;
@@ -150,9 +152,7 @@ function buildTargets() {
 
     // --- GRID: 5 × 4 × 10 ---
     targets.grid = [];
-    const gw = 5,
-        gh = 4,
-        gd = 10;
+    const gw = 5, gh = 4, gd = 10;
     const spacingGrid = 160;
     for (let i = 0; i < total; i++) {
         const w = i % gw;
@@ -182,7 +182,6 @@ function transform(targetArray, duration = 1500) {
     function step(time) {
         const elapsed = time - startTime;
         let progress = Math.min(elapsed / duration, 1);
-        // ease in-out cubic
         const ease = progress < 0.5 ?
             4 * progress * progress * progress :
             1 - Math.pow(-2 * progress + 2, 3) / 2;
@@ -212,14 +211,11 @@ function transform(targetArray, duration = 1500) {
 // 8. CREATE ALL TILES
 // ============================================================
 function createTiles() {
-    // Remove old
     objects.forEach(o => scene.remove(o));
     objects.length = 0;
 
-    // Create new
     for (const person of peopleData) {
         const tile = createTile(person);
-        // random start position (flying in effect)
         tile.position.set(
             (Math.random() - 0.5) * 4000,
             (Math.random() - 0.5) * 4000,
@@ -230,11 +226,8 @@ function createTiles() {
     }
 
     buildTargets();
-
-    // Show menu
     document.getElementById('menu').style.display = 'flex';
 
-    // Animate to table
     setTimeout(() => {
         transform(targets.table, 1800);
         setActiveButton('table');
@@ -297,7 +290,6 @@ function fetchSheetData(accessToken) {
                 netWorth: parseFloat(row[5] ? row[5].replace(/[$,]/g, '') : 0),
             }));
 
-            // Hide login, show viewer
             document.getElementById('login-container').style.display = 'none';
             initScene();
             createTiles();
@@ -335,5 +327,4 @@ function initGoogleSignIn() {
 // ============================================================
 // 12. START
 // ============================================================
-// Load Google API and start
 gapi.load('client', initGoogleSignIn);
