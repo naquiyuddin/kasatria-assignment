@@ -30,7 +30,6 @@ function initScene() {
     scene.background = new THREE.Color(0x111122);
 
     camera = new THREE.PerspectiveCamera(40, window.innerWidth / window.innerHeight, 1, 10000);
-    // Camera looking straight at the table from the front
     camera.position.set(0, 0, 2500);
     camera.lookAt(0, 0, 0);
 
@@ -68,9 +67,9 @@ function animate() {
 // 5. CREATE A TILE
 // ============================================================
 function createTile(person) {
-    let bgColor = '#dc3545'; // Red: < $100K
-    if (person.netWorth > 200000) bgColor = '#28a745'; // Green: > $200K
-    else if (person.netWorth >= 100000) bgColor = '#fd7e14'; // Orange: $100K–$200K
+    let bgColor = '#dc3545';
+    if (person.netWorth > 200000) bgColor = '#28a745';
+    else if (person.netWorth >= 100000) bgColor = '#fd7e14';
 
     const el = document.createElement('div');
     el.className = 'element';
@@ -92,13 +91,13 @@ function createTile(person) {
 }
 
 // ============================================================
-// 6. BUILD LAYOUT TARGETS (TABLE IS NOW PURE 2D)
+// 6. BUILD LAYOUT TARGETS (TABLE IS NOW TRULY 2D)
 // ============================================================
 function buildTargets() {
     const total = peopleData.length;
     if (total === 0) return;
 
-    // --- TABLE: 20 columns × 10 rows (PURE 2D - all at Z=0) ---
+    // --- TABLE: 20 columns × 10 rows (TRULY 2D - using CSS transform) ---
     targets.table = [];
     const cols = 20;
     const rows = 10;
@@ -111,11 +110,11 @@ function buildTargets() {
         const col = i % cols;
         const row = Math.floor(i / cols);
         const obj = new THREE.Object3D();
-        // Pure 2D grid: X = columns, Y = rows, Z = 0
+        // Position in a true 2D grid
         obj.position.x = startX + col * spacingX;
         obj.position.y = startY - row * spacingY;
         obj.position.z = 0;
-        // Reset rotation to avoid any 3D perspective distortion
+        // Critical: Force the object to face the camera directly
         obj.rotation.set(0, 0, 0);
         targets.table.push(obj);
     }
