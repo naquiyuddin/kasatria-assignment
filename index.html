@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Kasatria 3D Data Viewer</title>
+    <style>
+        body { margin: 0; overflow: hidden; font-family: Arial, sans-serif; }
+        #login-container {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            background: white;
+            padding: 40px;
+            border-radius: 12px;
+            box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+            z-index: 10;
+            min-width: 300px;
+        }
+        #login-container h2 { margin-top: 0; color: #333; }
+        #login-status { margin-top: 12px; color: #666; font-size: 14px; }
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(0,0,0,0.75);
+            padding: 15px 20px;
+            border-radius: 10px;
+            display: none;
+            gap: 10px;
+            flex-wrap: wrap;
+            justify-content: center;
+            backdrop-filter: blur(5px);
+        }
+        #controls button {
+            padding: 10px 18px;
+            border: none;
+            border-radius: 6px;
+            background: #4285f4;
+            color: white;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background 0.2s;
+        }
+        #controls button:hover { background: #357ae8; }
+        #controls button:active { transform: scale(0.95); }
+        #container { width: 100vw; height: 100vh; }
+    </style>
+</head>
+<body>
+    <div id="login-container">
+        <h2>🔐 Sign In With Google</h2>
+        <p style="color:#666; font-size:14px;">Please sign in to view the 3D data visualization</p>
+        <div id="g-signin2"></div>
+        <p id="login-status"></p>
+    </div>
+    <div id="container"></div>
+    <div id="controls">
+        <button onclick="changeLayout('table')">📊 Table (20x10)</button>
+        <button onclick="changeLayout('sphere')">🌍 Sphere</button>
+        <button onclick="changeLayout('helix')">🧬 Double Helix</button>
+        <button onclick="changeLayout('grid')">📦 Grid (5x4x10)</button>
+    </div>
+
+    <!-- Load Three.js -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://unpkg.com/three@0.126.0/build/three.module.js",
+            "three/addons/": "https://unpkg.com/three@0.126.0/examples/jsm/"
+        }
+    }
+    </script>
+    
+    <!-- Load Google APIs -->
+    <script src="https://apis.google.com/js/api.js"></script>
+    <script src="https://accounts.google.com/gsi/client"></script>
+    
+    <!-- Your main application -->
+    <script type="module" src="app.js"></script>
+</body>
+</html>
